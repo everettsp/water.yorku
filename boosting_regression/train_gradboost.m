@@ -46,7 +46,11 @@ for t2 = 1 : n_boosts
 
     ldx = ~(isnan(target) | isnan(mod(t2,:)));
     fun_loss = @(rho_m) sum((target(ldx) - rho_m * mod(t2,ldx)).^2);
+    
+    warning_settings = warning('query','all'); %temporarily surpress warnings caused by minimization function
+    warning('off','all');
     rho(t2) = fmincon(fun_loss,0);
+    warning(warning_settings);
     
     if t2 == 1
         out_sum(1,:) = rho(t2) .* mod(1,:);
@@ -65,7 +69,7 @@ end
 
 net = nets{1};
 net_info = nets_info{1};
-[~,best_val] = (min(val_loss));
+[~,val_best] = (min(val_loss));
 out_best = out_sum(val_best,:);
 
 gb.rho = rho;
@@ -77,7 +81,7 @@ gb.out_best = out_best;
 gb.nets = nets;
 gb.nets_info = nets_info;
 gb.loss_val = val_loss;
-gb.best_val = best_val;
+gb.val_best = val_best;
 
 if make_plot
     figure('Name','gradboost.ls: train-val-test loss function')
