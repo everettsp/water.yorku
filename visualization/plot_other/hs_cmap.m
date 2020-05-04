@@ -1,4 +1,4 @@
-function colmat = bivariate_colors(x1,x2,varargin)
+function colmat = hs_cmap(x1,x2,varargin)
 % function creates a colour matrix [n,3] for biaviate data [n,2]
 %
 % input arguments
@@ -48,7 +48,8 @@ if make_smooth
     pts2 = repmat(pts2_temp',[n_pts,1]);
     pts = [pts1,pts2];
     clear vars pts1_temp pts1 pts2_temp pts2
-    if ~isempty(args_ksdensity)
+    
+    if ~isempty(args_extra)
         [ks_freq, ~] = ksdensity([x1,x2],pts,args_extra);
     else
         [ks_freq, ~] = ksdensity([x1,x2],pts);
@@ -61,7 +62,7 @@ if make_smooth
     
 else
     % if histogram, get bins
-    if ~isempty(args_histogram)
+    if ~isempty(args_extra)
         [freq,c] = hist3([x1,x2],args_extra);
     else
         [freq,c] = hist3([x1,x2]);

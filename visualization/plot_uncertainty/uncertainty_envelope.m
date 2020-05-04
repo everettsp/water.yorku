@@ -14,6 +14,8 @@ classdef uncertainty_envelope < handle
         EnvelopeAlpha               % alpha of uncertainty envelope         (default 0.2)
         LineWidth                   % linewidth of median plot and envelope (default 1.5)
         EdgeAlpha                   % edge alpha                            (default 0)
+        MeanStyle
+        MedStyle
         DisplayName                 % series display name                   (default 'data')
         ShowMean                    % show mean values                      (default false)
         ShowMedian                  % show median values                    (default true)
@@ -27,9 +29,10 @@ classdef uncertainty_envelope < handle
             
             hold('on');
             
+            
             % plot median and mean
-            obj.MedPlot = plot(domain,median(data,2));
-            obj.MeanPlot = plot(domain,mean(data,2),':');
+            obj.MedPlot = plot(domain,median(data,2),args.MedStyle);
+            obj.MeanPlot = plot(domain,mean(data,2),args.MeanStyle);
             
             % find the discontinuities in the data
             data_starts = find(~any(isnan(data),2) & any(isnan([nan(1,size(data,2));data(1:end-1,:)]),2)); %lag down
@@ -56,24 +59,26 @@ classdef uncertainty_envelope < handle
             % identify and plot outlier points (specify outlier detection
             % method in 'isoutlier' function below
             k2 = 1;
-            outliers = [];
+            outliers = {};
             for i2 = 1:size(data,1)
                 ldx_outliers = isoutlier(data(i2,:));
                 idx_outliers = find(ldx_outliers);
                 if ~isempty(idx_outliers)
                     for i3 = 1:nnz(ldx_outliers)
-                        outliers(k2,:) = [domain(i2), data(i2,idx_outliers(i3))];
+                        outliers(k2,:) = {domain(i2), data(i2,idx_outliers(i3))};
                         k2 = k2 + 1;
                     end
                 end
             end
             
             if ~isempty(outliers)
-                obj.OutlierPlot = plot(outliers(:,1),outliers(:,2),'o','LineWidth',0.5,'MarkerSize',0.5);
+                obj.OutlierPlot = plot([outliers{:,1}],[outliers{:,2}],'o','LineWidth',0.5,'MarkerSize',0.5);
             else
                 obj.OutlierPlot = plot([]);
             end
             
+            % if color input, set colour - otherwise, get automatic color
+            % from default plot
             if not(isempty(args.Color))
                 obj.Color = args.Color;
             else
@@ -96,32 +101,30 @@ classdef uncertainty_envelope < handle
             end
             
             for i2 = 1:numel(obj.EnvelopePlots)
-                if i2 ~= 1
+%                 if i2 ~= 1 %uncomment if you want legend entry
                     obj.EnvelopePlots{i2}.HandleVisibility = 'off';
-                end
+%                 end
             end
             
         end
         
         function set.Color(obj, Color)
-            if ~isempty(obj.MedPlot)
-                obj.MedPlot.Color = Color;
-                obj.MedPlot.MarkerEdgeColor = Color;
-                obj.MedPlot.MarkerFaceColor = Color;
-                
-                obj.MeanPlot.Color = Color;
-                obj.MeanPlot.MarkerEdgeColor = Color;
-                obj.MeanPlot.MarkerFaceColor = Color;
-                
-                for i2 = 1:numel(obj.EnvelopePlots)
-                    obj.EnvelopePlots{i2}.FaceColor = Color;
-                    obj.EnvelopePlots{i2}.EdgeColor = Color;
-                end
-                
-                if ~isempty(obj.OutlierPlot)
-                    obj.OutlierPlot.Color = Color;
-                    obj.OutlierPlot.MarkerFaceColor = Color;
-                end
+            obj.MedPlot.Color = Color;
+            obj.MedPlot.MarkerEdgeColor = Color;
+            obj.MedPlot.MarkerFaceColor = Color;
+
+            obj.MeanPlot.Color = Color;
+            obj.MeanPlot.MarkerEdgeColor = Color;
+            obj.MeanPlot.MarkerFaceColor = Color;
+
+            for i2 = 1:numel(obj.EnvelopePlots)
+                obj.EnvelopePlots{i2}.FaceColor = Color;
+                obj.EnvelopePlots{i2}.EdgeColor = Color;
+            end
+
+            if ~isempty(obj.OutlierPlot)
+                obj.OutlierPlot.Color = Color;
+                obj.OutlierPlot.MarkerFaceColor = Color;
             end
         end
         
@@ -140,8 +143,8 @@ classdef uncertainty_envelope < handle
         
         function set.DisplayName(obj, DisplayName)
             obj.MeanPlot.DisplayName = [DisplayName,' mean'];
-            obj.MedPlot.DisplayName = [DisplayName,' median'];
-            
+%             obj.MedPlot.DisplayName = [DisplayName,' median'];
+            obj.MedPlot.DisplayName = [DisplayName];
             if ~isempty(obj.OutlierPlot)
                 obj.OutlierPlot.DisplayName = [DisplayName,' outliers'];
             end
@@ -161,7 +164,7 @@ classdef uncertainty_envelope < handle
         end
         
         function LineWidth = get.LineWidth(obj)
-            LineWidth = obj.MeanPlot.LineWidth;
+            LineWidth = obj.MedPlot.LineWidth;
         end
         
         function set.EnvelopeAlpha(obj, EnvelopeAlpha)
@@ -254,6 +257,8 @@ classdef uncertainty_envelope < handle
             p.addParameter('DisplayName', 'Data', @ischar);
             iscolor = @(x) (isnumeric(x) & length(x) == 3);
             p.addParameter('Color', [], iscolor);
+            p.addParameter('MedStyle', 'o-', @ischar)
+            p.addParameter('MeanStyle', 'x:', @ischar)
             p.addParameter('LineWidth',1.5, isscalarnumeric)
             isalpha = @(x) (isnumeric(x) & isscalar(x) & x <= 1);
             p.addParameter('EnvelopeAlpha', 0.2, isalpha);
